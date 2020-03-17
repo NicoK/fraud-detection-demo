@@ -31,6 +31,8 @@ import com.ververica.field.dynamicrules.Rule.RuleState;
 import com.ververica.field.dynamicrules.RuleHelper;
 import com.ververica.field.dynamicrules.RulesEvaluator.Descriptors;
 import com.ververica.field.dynamicrules.Transaction;
+import com.ververica.field.dynamicrules.serialization.SetTypeInfo;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
@@ -38,9 +40,7 @@ import org.apache.flink.api.common.accumulators.SimpleAccumulator;
 import org.apache.flink.api.common.state.BroadcastState;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
-import org.apache.flink.api.common.typeinfo.TypeHint;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.MeterView;
@@ -51,7 +51,7 @@ import org.apache.flink.util.Collector;
 @Slf4j
 public class DynamicAlertFunction
     extends KeyedBroadcastProcessFunction<
-        String, Keyed<Transaction, String, Integer>, Rule, Alert> {
+        String, Keyed<Transaction, String, Integer>, Rule, Alert<Transaction, BigDecimal>> {
 
   private static final String COUNT = "COUNT_FLINK";
   private static final String COUNT_WITH_RESET = "COUNT_WITH_RESET_FLINK";
@@ -62,10 +62,7 @@ public class DynamicAlertFunction
   private Meter alertMeter;
 
   private MapStateDescriptor<Long, Set<Transaction>> windowStateDescriptor =
-      new MapStateDescriptor<>(
-          "windowState",
-          BasicTypeInfo.LONG_TYPE_INFO,
-          TypeInformation.of(new TypeHint<Set<Transaction>>() {}));
+      new MapStateDescriptor<>("windowState", Types.LONG, new SetTypeInfo<>(Transaction.class));
 
   @Override
   public void open(Configuration parameters) {
@@ -78,7 +75,9 @@ public class DynamicAlertFunction
 
   @Override
   public void processElement(
-      Keyed<Transaction, String, Integer> value, ReadOnlyContext ctx, Collector<Alert> out)
+      Keyed<Transaction, String, Integer> value,
+      ReadOnlyContext ctx,
+      Collector<Alert<Transaction, BigDecimal>> out)
       throws Exception {
 
     long currentEventTime = value.getWrapped().getEventTime();
@@ -131,8 +130,8 @@ public class DynamicAlertFunction
   }
 
   @Override
-  public void processBroadcastElement(Rule rule, Context ctx, Collector<Alert> out)
-      throws Exception {
+  public void processBroadcastElement(
+      Rule rule, Context ctx, Collector<Alert<Transaction, BigDecimal>> out) throws Exception {
     log.trace("Processing {}", rule);
     BroadcastState<Integer, Rule> broadcastState =
         ctx.getBroadcastState(Descriptors.rulesDescriptor);
@@ -198,7 +197,10 @@ public class DynamicAlertFunction
   }
 
   @Override
-  public void onTimer(final long timestamp, final OnTimerContext ctx, final Collector<Alert> out)
+  public void onTimer(
+      final long timestamp,
+      final OnTimerContext ctx,
+      final Collector<Alert<Transaction, BigDecimal>> out)
       throws Exception {
 
     Rule widestWindowRule = ctx.getBroadcastState(Descriptors.rulesDescriptor).get(WIDEST_RULE_KEY);

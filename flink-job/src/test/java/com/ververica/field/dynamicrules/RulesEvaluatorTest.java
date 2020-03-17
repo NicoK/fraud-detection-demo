@@ -103,7 +103,7 @@ public class RulesEvaluatorTest {
     Keyed<Transaction, String, Integer> keyed3 = new Keyed<>(event3, "CRD", 1);
 
     try (BroadcastStreamKeyedOperatorTestHarness<
-            String, Keyed<Transaction, String, Integer>, Rule, Alert>
+            String, Keyed<Transaction, String, Integer>, Rule, Alert<Transaction, BigDecimal>>
         testHarness =
             BroadcastStreamKeyedOperatorTestHarness.getInitializedTestHarness(
                 new DynamicAlertFunction(),
@@ -146,7 +146,7 @@ public class RulesEvaluatorTest {
     Keyed<Transaction, String, Integer> keyed2 = new Keyed<>(event2, "CSH", 1);
 
     try (BroadcastStreamKeyedOperatorTestHarness<
-            String, Keyed<Transaction, String, Integer>, Rule, Alert>
+            String, Keyed<Transaction, String, Integer>, Rule, Alert<Transaction, BigDecimal>>
         testHarness =
             BroadcastStreamKeyedOperatorTestHarness.getInitializedTestHarness(
                 new DynamicAlertFunction(),
@@ -191,7 +191,7 @@ public class RulesEvaluatorTest {
     Keyed<Transaction, String, Integer> keyed4 = new Keyed<>(event4, "CSH", 1);
 
     try (BroadcastStreamKeyedOperatorTestHarness<
-            String, Keyed<Transaction, String, Integer>, Rule, Alert>
+            String, Keyed<Transaction, String, Integer>, Rule, Alert<Transaction, BigDecimal>>
         testHarness =
             BroadcastStreamKeyedOperatorTestHarness.getInitializedTestHarness(
                 new DynamicAlertFunction(),

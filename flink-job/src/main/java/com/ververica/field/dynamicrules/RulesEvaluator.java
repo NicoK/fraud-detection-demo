@@ -36,12 +36,11 @@ import com.ververica.field.dynamicrules.sinks.LatencySink;
 import com.ververica.field.dynamicrules.sources.RulesSource;
 import com.ververica.field.dynamicrules.sources.TransactionsSource;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.BroadcastStream;
@@ -66,6 +65,7 @@ public class RulesEvaluator {
 
     // Environment setup
     StreamExecutionEnvironment env = configureStreamExecutionEnvironment();
+    env.getConfig().disableGenericTypes();
 
     // Streams setup
     DataStream<Rule> rulesUpdateStream = getRulesUpdateStream(env);
@@ -74,7 +74,7 @@ public class RulesEvaluator {
     BroadcastStream<Rule> rulesStream = rulesUpdateStream.broadcast(Descriptors.rulesDescriptor);
 
     // Processing pipeline setup
-    DataStream<Alert> alerts =
+    SingleOutputStreamOperator<Alert<Transaction, BigDecimal>> alerts =
         transactions
             .connect(rulesStream)
             .process(new DynamicKeyFunction())
@@ -86,11 +86,9 @@ public class RulesEvaluator {
             .uid("DynamicAlertFunction")
             .name("Dynamic Rule Evaluation Function");
 
-    DataStream<Long> latency =
-        ((SingleOutputStreamOperator<Alert>) alerts).getSideOutput(Descriptors.latencySinkTag);
+    DataStream<Long> latency = alerts.getSideOutput(Descriptors.latencySinkTag);
 
-    DataStream<Rule> currentRules =
-        ((SingleOutputStreamOperator<Alert>) alerts).getSideOutput(Descriptors.currentRulesSinkTag);
+    DataStream<Rule> currentRules = alerts.getSideOutput(Descriptors.currentRulesSinkTag);
 
     DataStream<String> alertsJson = AlertsSink.alertsStreamToJson(alerts);
     DataStream<String> currentRulesJson = CurrentRulesSink.rulesStreamToJson(currentRules);
@@ -184,8 +182,7 @@ public class RulesEvaluator {
 
   public static class Descriptors {
     public static final MapStateDescriptor<Integer, Rule> rulesDescriptor =
-        new MapStateDescriptor<>(
-            "rules", BasicTypeInfo.INT_TYPE_INFO, TypeInformation.of(Rule.class));
+        new MapStateDescriptor<>("rules", Integer.class, Rule.class);
 
     public static final OutputTag<Long> latencySinkTag = new OutputTag<Long>("latency-sink") {};
     public static final OutputTag<Rule> currentRulesSinkTag =

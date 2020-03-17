@@ -24,14 +24,22 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.ververica.field.dynamicrules.serialization.LongToMoneyJsonSerializer;
 import com.ververica.field.dynamicrules.serialization.MoneyToLongJsonDeserializer;
+import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.flink.api.common.time.Time;
+import org.apache.flink.api.common.typeinfo.TypeInfo;
+import org.apache.flink.api.common.typeinfo.TypeInfoFactory;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeinfo.Types;
 
 /** Rules representation. */
 @EqualsAndHashCode
 @Data
+@TypeInfo(Rule.RuleTypeInfoFactory.class)
 public class Rule {
 
   private Integer ruleId;
@@ -148,5 +156,27 @@ public class Rule {
     CLEAR_STATE_ALL,
     DELETE_RULES_ALL,
     EXPORT_RULES_CURRENT
+  }
+
+  public static class RuleTypeInfoFactory extends TypeInfoFactory<Rule> {
+    @Override
+    public TypeInformation<Rule> createTypeInfo(
+        Type t, Map<String, TypeInformation<?>> genericParameters) {
+      return Types.POJO(
+          Rule.class,
+          new HashMap<String, TypeInformation<?>>() {
+            {
+              put("ruleId", Types.INT);
+              put("ruleState", Types.ENUM(RuleState.class));
+              put("groupingKeyNames", Types.LIST(Types.STRING));
+              put("aggregateFieldName", Types.STRING);
+              put("aggregatorFunctionType", Types.ENUM(AggregatorFunctionType.class));
+              put("limitOperatorType", Types.ENUM(LimitOperatorType.class));
+              put("limit", Types.LONG);
+              put("windowMinutes", Types.INT);
+              put("controlType", Types.ENUM(ControlType.class));
+            }
+          });
+    }
   }
 }
