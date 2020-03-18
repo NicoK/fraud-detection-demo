@@ -28,6 +28,7 @@ import com.ververica.field.dynamicrules.KafkaUtils;
 import com.ververica.field.dynamicrules.Rule;
 import com.ververica.field.dynamicrules.functions.JsonSerializer;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Properties;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -50,7 +51,7 @@ public class CurrentRulesSink {
         String alertsTopic = config.get(RULES_EXPORT_TOPIC);
         return new FlinkKafkaProducer011<>(alertsTopic, new SimpleStringSchema(), kafkaProps);
       case PUBSUB:
-        return PubSubSink.<String>newBuilder()
+        return PubSubSink.newBuilder()
             .withSerializationSchema(new SimpleStringSchema())
             .withProjectName(config.get(GCP_PROJECT_NAME))
             .withTopicName(config.get(GCP_PUBSUB_RULES_SUBSCRIPTION))
@@ -59,7 +60,10 @@ public class CurrentRulesSink {
         return new PrintSinkFunction<>(true);
       default:
         throw new IllegalArgumentException(
-            "Source \"" + currentRulesSinkType + "\" unknown. Known values are:" + Type.values());
+            "Source \""
+                + currentRulesSinkType
+                + "\" unknown. Known values are:"
+                + Arrays.toString(Type.values()));
     }
   }
 
