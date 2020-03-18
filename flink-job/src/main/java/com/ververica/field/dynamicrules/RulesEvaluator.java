@@ -110,8 +110,9 @@ public class RulesEvaluator {
         latency
             .timeWindowAll(Time.seconds(10))
             .aggregate(new AverageAggregate())
-            .map(String::valueOf);
-    latencies.addSink(LatencySink.createLatencySink(config)).name("Latency Sink");
+            .map(String::valueOf)
+            .setParallelism(1);
+    latencies.addSink(LatencySink.createLatencySink(config)).setParallelism(1).name("Latency Sink");
 
     env.execute("Fraud Detection Engine");
   }
