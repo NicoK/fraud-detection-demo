@@ -22,10 +22,7 @@ import java.lang.reflect.Field;
 
 public class FieldsExtractor {
 
-  public static String getFieldAsString(Object object, String fieldName)
-      throws IllegalAccessException, NoSuchFieldException {
-    Class<?> cls = object.getClass();
-    Field field = cls.getField(fieldName);
+  public static String getFieldAsString(Object object, Field field) throws IllegalAccessException {
     return field.get(object).toString();
   }
 
@@ -36,9 +33,7 @@ public class FieldsExtractor {
   }
 
   @SuppressWarnings("unchecked")
-  public static <T> T getByKeyAs(String keyName, Object object)
-      throws NoSuchFieldException, IllegalAccessException {
-    Field field = object.getClass().getField(keyName);
+  public static <T> T getByKeyAs(Object object, Field field) throws IllegalAccessException {
     return (T) field.get(object);
   }
 }

@@ -24,18 +24,23 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.ververica.field.dynamicrules.serialization.LongToMoneyJsonSerializer;
 import com.ververica.field.dynamicrules.serialization.MoneyToLongJsonDeserializer;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.api.java.typeutils.PojoTypeInfo;
 
 @Data
 @Builder
@@ -115,6 +120,16 @@ public class Transaction implements TimestampAssignable<Long> {
   @Override
   public void assignIngestionTimestamp(Long timestamp) {
     this.ingestionTimestamp = timestamp;
+  }
+
+  public static Map<String, Field> getFieldMap() {
+    PojoTypeInfo<Transaction> typeInfo = (PojoTypeInfo<Transaction>) Types.POJO(Transaction.class);
+    Map<String, Field> fields = new HashMap<>(typeInfo.getTotalFields());
+    for (int i = 0; i < typeInfo.getTotalFields(); ++i) {
+      Field field = typeInfo.getPojoFieldAt(i).getField();
+      fields.put(field.getName(), field);
+    }
+    return fields;
   }
 
   @Override

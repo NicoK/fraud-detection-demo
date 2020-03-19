@@ -32,6 +32,7 @@ import com.ververica.field.dynamicrules.RuleHelper;
 import com.ververica.field.dynamicrules.RulesEvaluator.Descriptors;
 import com.ververica.field.dynamicrules.Transaction;
 import com.ververica.field.dynamicrules.serialization.SetTypeInfo;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.Map.Entry;
@@ -60,6 +61,7 @@ public class DynamicAlertFunction
 
   private transient MapState<Long, Set<Transaction>> windowState;
   private Meter alertMeter;
+  private transient Map<String, Field> transactionFields;
 
   private MapStateDescriptor<Long, Set<Transaction>> windowStateDescriptor =
       new MapStateDescriptor<>("windowState", Types.LONG, new SetTypeInfo<>(Transaction.class));
@@ -71,6 +73,7 @@ public class DynamicAlertFunction
 
     alertMeter = new MeterView(60);
     getRuntimeContext().getMetricGroup().meter("alertsPerSecond", alertMeter);
+    transactionFields = Transaction.getFieldMap();
   }
 
   @Override
@@ -96,6 +99,7 @@ public class DynamicAlertFunction
     }
 
     if (rule.getRuleState() == Rule.RuleState.ACTIVE) {
+      Field aggregateField = transactionFields.get(rule.getAggregateFieldName());
       Long windowStartForEvent = rule.getWindowStartFor(currentEventTime);
 
       long cleanupTime = (currentEventTime / 1000) * 1000;
@@ -104,7 +108,7 @@ public class DynamicAlertFunction
       SimpleAccumulator<Long> aggregator = RuleHelper.getAggregator(rule);
       for (Long stateEventTime : windowState.keys()) {
         if (isStateValueInWindow(stateEventTime, windowStartForEvent, currentEventTime)) {
-          aggregateValuesInState(stateEventTime, aggregator, rule);
+          aggregateValuesInState(stateEventTime, aggregator, rule, aggregateField);
         }
       }
       Long aggregateResult = aggregator.getLocalValue();
@@ -171,7 +175,8 @@ public class DynamicAlertFunction
   }
 
   private void aggregateValuesInState(
-      Long stateEventTime, SimpleAccumulator<Long> aggregator, Rule rule) throws Exception {
+      Long stateEventTime, SimpleAccumulator<Long> aggregator, Rule rule, Field aggregateField)
+      throws Exception {
     Set<Transaction> inWindow = windowState.get(stateEventTime);
     if (COUNT.equals(rule.getAggregateFieldName())
         || COUNT_WITH_RESET.equals(rule.getAggregateFieldName())) {
@@ -180,7 +185,7 @@ public class DynamicAlertFunction
       }
     } else {
       for (Transaction event : inWindow) {
-        long aggregatedValue = FieldsExtractor.getByKeyAs(rule.getAggregateFieldName(), event);
+        long aggregatedValue = FieldsExtractor.getByKeyAs(event, aggregateField);
         aggregator.add(aggregatedValue);
       }
     }

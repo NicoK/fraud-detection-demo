@@ -18,6 +18,7 @@
 
 package com.ververica.field.dynamicrules;
 
+import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.List;
 
@@ -27,15 +28,15 @@ public class KeysExtractor {
   /**
    * Extracts and concatenates field values by names.
    *
-   * @param keyNames list of field names
+   * @param keyFields list of fields
    * @param object target for values extraction
    */
-  public static String getKey(List<String> keyNames, Object object)
+  public static String getKey(List<Field> keyFields, Object object)
       throws NoSuchFieldException, IllegalAccessException {
     StringBuilder sb = new StringBuilder();
     sb.append("{");
-    if (keyNames.size() > 0) {
-      Iterator<String> it = keyNames.iterator();
+    if (keyFields.size() > 0) {
+      Iterator<Field> it = keyFields.iterator();
       appendKeyValue(sb, object, it.next());
 
       while (it.hasNext()) {
@@ -47,10 +48,10 @@ public class KeysExtractor {
     return sb.toString();
   }
 
-  private static void appendKeyValue(StringBuilder sb, Object object, String fieldName)
-      throws IllegalAccessException, NoSuchFieldException {
-    sb.append(fieldName);
+  private static void appendKeyValue(StringBuilder sb, Object object, Field field)
+      throws IllegalAccessException {
+    sb.append(field.getName());
     sb.append("=");
-    sb.append(FieldsExtractor.getFieldAsString(object, fieldName));
+    sb.append(FieldsExtractor.getFieldAsString(object, field));
   }
 }

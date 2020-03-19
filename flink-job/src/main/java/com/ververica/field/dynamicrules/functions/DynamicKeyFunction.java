@@ -27,9 +27,11 @@ import com.ververica.field.dynamicrules.Rule.ControlType;
 import com.ververica.field.dynamicrules.Rule.RuleState;
 import com.ververica.field.dynamicrules.RulesEvaluator.Descriptors;
 import com.ververica.field.dynamicrules.Transaction;
+import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.state.BroadcastState;
 import org.apache.flink.api.common.state.ReadOnlyBroadcastState;
@@ -44,11 +46,13 @@ public class DynamicKeyFunction
     extends BroadcastProcessFunction<Transaction, Rule, Keyed<Transaction, String, Integer>> {
 
   private RuleCounterGauge ruleCounterGauge;
+  private transient Map<String, Field> transactionFields;
 
   @Override
   public void open(Configuration parameters) {
     ruleCounterGauge = new RuleCounterGauge();
     getRuntimeContext().getMetricGroup().gauge("numberOfActiveRules", ruleCounterGauge);
+    transactionFields = Transaction.getFieldMap();
   }
 
   @Override
@@ -70,7 +74,14 @@ public class DynamicKeyFunction
       final Rule rule = entry.getValue();
       out.collect(
           new Keyed<>(
-              event, KeysExtractor.getKey(rule.getGroupingKeyNames(), event), rule.getRuleId()));
+              event,
+              KeysExtractor.getKey(
+                  rule.getGroupingKeyNames()
+                      .stream()
+                      .map(x -> transactionFields.get(x))
+                      .collect(Collectors.toList()),
+                  event),
+              rule.getRuleId()));
       ruleCounter++;
     }
     ruleCounterGauge.setValue(ruleCounter);
