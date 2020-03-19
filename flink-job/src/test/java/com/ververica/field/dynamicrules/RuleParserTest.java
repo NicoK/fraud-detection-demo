@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import com.ververica.field.dynamicrules.Rule.AggregatorFunctionType;
 import com.ververica.field.dynamicrules.Rule.LimitOperatorType;
 import com.ververica.field.dynamicrules.Rule.RuleState;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Assert;
@@ -53,7 +52,7 @@ public class RuleParserTest {
         rule1.getAggregatorFunctionType());
     Assert.assertEquals(
         "Limit operator incorrect", LimitOperatorType.GREATER, rule1.getLimitOperatorType());
-    assertEquals("Limit incorrect", BigDecimal.valueOf(5), rule1.getLimit());
+    assertEquals("Limit incorrect", 5__00L, rule1.getLimit());
     assertEquals("Window incorrect", 20, (int) rule1.getWindowMinutes());
   }
 
@@ -84,7 +83,7 @@ public class RuleParserTest {
         rule1.getAggregatorFunctionType());
     Assert.assertEquals(
         "Limit operator incorrect", LimitOperatorType.GREATER, rule1.getLimitOperatorType());
-    assertEquals("Limit incorrect", BigDecimal.valueOf(50), rule1.getLimit());
+    assertEquals("Limit incorrect", 50__00L, rule1.getLimit());
     assertEquals("Window incorrect", 20, (int) rule1.getWindowMinutes());
   }
 }

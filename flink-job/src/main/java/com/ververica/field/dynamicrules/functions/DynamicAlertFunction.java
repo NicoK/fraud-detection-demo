@@ -20,6 +20,7 @@ package com.ververica.field.dynamicrules.functions;
 
 import static com.ververica.field.dynamicrules.functions.ProcessingUtils.addToStateValuesSet;
 import static com.ververica.field.dynamicrules.functions.ProcessingUtils.handleRuleBroadcast;
+import static com.ververica.field.dynamicrules.serialization.LongToMoneyJsonSerializer.longToMoney;
 
 import com.ververica.field.dynamicrules.Alert;
 import com.ververica.field.dynamicrules.FieldsExtractor;
@@ -30,7 +31,6 @@ import com.ververica.field.dynamicrules.Rule.RuleState;
 import com.ververica.field.dynamicrules.RuleHelper;
 import com.ververica.field.dynamicrules.RulesEvaluator.Descriptors;
 import com.ververica.field.dynamicrules.Transaction;
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
@@ -102,13 +102,13 @@ public class DynamicAlertFunction
       long cleanupTime = (currentEventTime / 1000) * 1000;
       ctx.timerService().registerEventTimeTimer(cleanupTime);
 
-      SimpleAccumulator<BigDecimal> aggregator = RuleHelper.getAggregator(rule);
+      SimpleAccumulator<Long> aggregator = RuleHelper.getAggregator(rule);
       for (Long stateEventTime : windowState.keys()) {
         if (isStateValueInWindow(stateEventTime, windowStartForEvent, currentEventTime)) {
           aggregateValuesInState(stateEventTime, aggregator, rule);
         }
       }
-      BigDecimal aggregateResult = aggregator.getLocalValue();
+      Long aggregateResult = aggregator.getLocalValue();
       boolean ruleResult = rule.apply(aggregateResult);
 
       log.trace(
@@ -121,7 +121,11 @@ public class DynamicAlertFunction
         alertMeter.markEvent();
         out.collect(
             new Alert<>(
-                rule.getRuleId(), rule, value.getKey(), value.getWrapped(), aggregateResult));
+                rule.getRuleId(),
+                rule,
+                value.getKey(),
+                value.getWrapped(),
+                longToMoney(aggregateResult)));
       }
     }
   }
@@ -168,17 +172,16 @@ public class DynamicAlertFunction
   }
 
   private void aggregateValuesInState(
-      Long stateEventTime, SimpleAccumulator<BigDecimal> aggregator, Rule rule) throws Exception {
+      Long stateEventTime, SimpleAccumulator<Long> aggregator, Rule rule) throws Exception {
     Set<Transaction> inWindow = windowState.get(stateEventTime);
     if (COUNT.equals(rule.getAggregateFieldName())
         || COUNT_WITH_RESET.equals(rule.getAggregateFieldName())) {
       for (int i = 0; i < inWindow.size(); ++i) {
-        aggregator.add(BigDecimal.ONE);
+        aggregator.add(1L);
       }
     } else {
       for (Transaction event : inWindow) {
-        BigDecimal aggregatedValue =
-            FieldsExtractor.getBigDecimalByName(rule.getAggregateFieldName(), event);
+        long aggregatedValue = FieldsExtractor.getByKeyAs(rule.getAggregateFieldName(), event);
         aggregator.add(aggregatedValue);
       }
     }

@@ -18,16 +18,19 @@
 
 package com.ververica.field.dynamicrules;
 
-import java.math.BigDecimal;
+import static com.ververica.field.dynamicrules.serialization.LongToMoneyJsonSerializer.longToMoney;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.ververica.field.dynamicrules.serialization.LongToMoneyJsonSerializer;
+import com.ververica.field.dynamicrules.serialization.MoneyToLongJsonDeserializer;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import org.apache.flink.api.common.time.Time;
 
 /** Rules representation. */
 @EqualsAndHashCode
-@ToString
 @Data
 public class Rule {
 
@@ -37,7 +40,11 @@ public class Rule {
   private String aggregateFieldName;
   private AggregatorFunctionType aggregatorFunctionType;
   private LimitOperatorType limitOperatorType;
-  private BigDecimal limit;
+
+  @JsonDeserialize(using = MoneyToLongJsonDeserializer.class)
+  @JsonSerialize(using = LongToMoneyJsonSerializer.class)
+  private long limit;
+
   private Integer windowMinutes;
   private ControlType controlType;
 
@@ -50,20 +57,20 @@ public class Rule {
    *
    * @param comparisonValue value to be compared with the limit
    */
-  public boolean apply(BigDecimal comparisonValue) {
+  public boolean apply(long comparisonValue) {
     switch (limitOperatorType) {
       case EQUAL:
-        return comparisonValue.compareTo(limit) == 0;
+        return comparisonValue == limit;
       case NOT_EQUAL:
-        return comparisonValue.compareTo(limit) != 0;
+        return comparisonValue != limit;
       case GREATER:
-        return comparisonValue.compareTo(limit) > 0;
+        return comparisonValue > limit;
       case LESS:
-        return comparisonValue.compareTo(limit) < 0;
+        return comparisonValue < limit;
       case LESS_EQUAL:
-        return comparisonValue.compareTo(limit) <= 0;
+        return comparisonValue <= limit;
       case GREATER_EQUAL:
-        return comparisonValue.compareTo(limit) >= 0;
+        return comparisonValue >= limit;
       default:
         throw new RuntimeException("Unknown limit operator type: " + limitOperatorType);
     }
@@ -72,6 +79,31 @@ public class Rule {
   public long getWindowStartFor(Long timestamp) {
     Long ruleWindowMillis = getWindowMillis();
     return (timestamp - ruleWindowMillis);
+  }
+
+  @Override
+  public String toString() {
+    return "Rule{"
+        + "ruleId="
+        + ruleId
+        + ", ruleState="
+        + ruleState
+        + ", groupingKeyNames="
+        + groupingKeyNames
+        + ", aggregateFieldName='"
+        + aggregateFieldName
+        + '\''
+        + ", aggregatorFunctionType="
+        + aggregatorFunctionType
+        + ", limitOperatorType="
+        + limitOperatorType
+        + ", limit="
+        + longToMoney(limit)
+        + ", windowMinutes="
+        + windowMinutes
+        + ", controlType="
+        + controlType
+        + '}';
   }
 
   public enum AggregatorFunctionType {

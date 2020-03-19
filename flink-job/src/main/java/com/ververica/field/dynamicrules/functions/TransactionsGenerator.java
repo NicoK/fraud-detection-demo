@@ -21,17 +21,15 @@ package com.ververica.field.dynamicrules.functions;
 import com.ververica.field.dynamicrules.Transaction;
 import com.ververica.field.dynamicrules.Transaction.PaymentType;
 import com.ververica.field.sources.BaseGenerator;
-import java.math.BigDecimal;
 import java.util.SplittableRandom;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class TransactionsGenerator extends BaseGenerator<Transaction> {
 
   private static final long MAX_PAYEE_ID = 100000;
   private static final long MAX_BENEFICIARY_ID = 100000;
 
-  private static final double MIN_PAYMENT_AMOUNT = 5d;
-  private static final double MAX_PAYMENT_AMOUNT = 20d;
+  private static final long MIN_PAYMENT_AMOUNT_CENTS = 5__00L;
+  private static final long MAX_PAYMENT_AMOUNT_CENTS = 20__00L;
 
   public TransactionsGenerator(int maxRecordsPerSecond) {
     super(maxRecordsPerSecond);
@@ -42,10 +40,7 @@ public class TransactionsGenerator extends BaseGenerator<Transaction> {
     long transactionId = rnd.nextLong(Long.MAX_VALUE);
     long payeeId = rnd.nextLong(MAX_PAYEE_ID);
     long beneficiaryId = rnd.nextLong(MAX_BENEFICIARY_ID);
-    double paymentAmountDouble =
-        ThreadLocalRandom.current().nextDouble(MIN_PAYMENT_AMOUNT, MAX_PAYMENT_AMOUNT);
-    paymentAmountDouble = Math.floor(paymentAmountDouble * 100) / 100;
-    BigDecimal paymentAmount = BigDecimal.valueOf(paymentAmountDouble);
+    long paymentAmount = rnd.nextLong(MIN_PAYMENT_AMOUNT_CENTS, MAX_PAYMENT_AMOUNT_CENTS);
 
     return Transaction.builder()
         .transactionId(transactionId)

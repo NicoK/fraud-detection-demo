@@ -18,27 +18,26 @@
 
 package com.ververica.field.dynamicrules;
 
-import com.ververica.field.dynamicrules.accumulators.BigDecimalAverageAccumulator;
-import com.ververica.field.dynamicrules.accumulators.BigDecimalCounter;
-import com.ververica.field.dynamicrules.accumulators.BigDecimalMaximum;
-import com.ververica.field.dynamicrules.accumulators.BigDecimalMinimum;
-import java.math.BigDecimal;
+import com.ververica.field.dynamicrules.accumulators.LongAverageAccumulator;
+import org.apache.flink.api.common.accumulators.LongCounter;
+import org.apache.flink.api.common.accumulators.LongMaximum;
+import org.apache.flink.api.common.accumulators.LongMinimum;
 import org.apache.flink.api.common.accumulators.SimpleAccumulator;
 
 /* Collection of helper methods for Rules. */
 public class RuleHelper {
 
   /* Picks and returns a new accumulator, based on the Rule's aggregator function type. */
-  public static SimpleAccumulator<BigDecimal> getAggregator(Rule rule) {
+  public static SimpleAccumulator<Long> getAggregator(Rule rule) {
     switch (rule.getAggregatorFunctionType()) {
       case SUM:
-        return new BigDecimalCounter();
+        return new LongCounter();
       case AVG:
-        return new BigDecimalAverageAccumulator();
+        return new LongAverageAccumulator();
       case MAX:
-        return new BigDecimalMaximum();
+        return new LongMaximum();
       case MIN:
-        return new BigDecimalMinimum();
+        return new LongMinimum();
       default:
         throw new RuntimeException(
             "Unsupported aggregation function type: " + rule.getAggregatorFunctionType());

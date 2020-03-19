@@ -19,7 +19,6 @@
 package com.ververica.field.dynamicrules;
 
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
 
 public class FieldsExtractor {
 
@@ -34,12 +33,6 @@ public class FieldsExtractor {
       throws NoSuchFieldException, IllegalAccessException {
     Field field = object.getClass().getField(fieldName);
     return (double) field.get(object);
-  }
-
-  public static BigDecimal getBigDecimalByName(String fieldName, Object object)
-      throws NoSuchFieldException, IllegalAccessException {
-    Field field = object.getClass().getField(fieldName);
-    return new BigDecimal(field.get(object).toString());
   }
 
   @SuppressWarnings("unchecked")

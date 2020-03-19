@@ -120,9 +120,9 @@ public class RulesEvaluatorTest {
 
       ConcurrentLinkedQueue<Object> expectedOutput = new ConcurrentLinkedQueue<>();
       Alert<Transaction, BigDecimal> alert1 =
-          new Alert<>(rule1.getRuleId(), rule1, "CSH", event1, BigDecimal.valueOf(22));
+          new Alert<>(rule1.getRuleId(), rule1, "CSH", event1, new BigDecimal("22.00"));
       Alert<Transaction, BigDecimal> alert2 =
-          new Alert<>(rule1.getRuleId(), rule1, "CRD", event3, BigDecimal.valueOf(21));
+          new Alert<>(rule1.getRuleId(), rule1, "CRD", event3, new BigDecimal("21.00"));
 
       expectedOutput.add(new StreamRecord<>(alert1, 15L));
       expectedOutput.add(new StreamRecord<>(alert2, 17L));
@@ -162,7 +162,7 @@ public class RulesEvaluatorTest {
 
       ConcurrentLinkedQueue<Object> expectedOutput = new ConcurrentLinkedQueue<>();
       Alert<Transaction, BigDecimal> alert1 =
-          new Alert<>(rule1.getRuleId(), rule1, "CSH", event2, new BigDecimal(21));
+          new Alert<>(rule1.getRuleId(), rule1, "CSH", event2, new BigDecimal("21.00"));
 
       expectedOutput.add(new StreamRecord<>(alert1, 16L));
 
@@ -220,7 +220,7 @@ public class RulesEvaluatorTest {
 
       ConcurrentLinkedQueue<Object> expectedOutput = new ConcurrentLinkedQueue<>();
       Alert<Transaction, BigDecimal> alert1 =
-          new Alert<>(rule1.getRuleId(), rule1, "CSH", event3, new BigDecimal(11));
+          new Alert<>(rule1.getRuleId(), rule1, "CSH", event3, new BigDecimal("11.00"));
 
       expectedOutput.add(new StreamRecord<>(alert1, event3.getEventTime()));
 

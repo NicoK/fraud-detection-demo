@@ -18,6 +18,8 @@
 
 package com.ververica.field.dynamicrules;
 
+import static com.ververica.field.dynamicrules.serialization.MoneyToLongJsonDeserializer.moneyToLong;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ververica.field.dynamicrules.Rule.AggregatorFunctionType;
 import com.ververica.field.dynamicrules.Rule.LimitOperatorType;
@@ -61,7 +63,7 @@ public class RuleParser {
     rule.setAggregatorFunctionType(
         AggregatorFunctionType.valueOf(stripBrackets(iter.next()).toUpperCase()));
     rule.setLimitOperatorType(LimitOperatorType.fromString(stripBrackets(iter.next())));
-    rule.setLimit(new BigDecimal(stripBrackets(iter.next())));
+    rule.setLimit(moneyToLong(new BigDecimal(stripBrackets(iter.next()))));
     rule.setWindowMinutes(Integer.parseInt(stripBrackets(iter.next())));
 
     return rule;

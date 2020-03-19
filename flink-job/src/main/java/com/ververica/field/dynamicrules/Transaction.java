@@ -18,6 +18,12 @@
 
 package com.ververica.field.dynamicrules;
 
+import static com.ververica.field.dynamicrules.serialization.LongToMoneyJsonSerializer.longToMoney;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.ververica.field.dynamicrules.serialization.LongToMoneyJsonSerializer;
+import com.ververica.field.dynamicrules.serialization.MoneyToLongJsonDeserializer;
 import java.math.BigDecimal;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -40,7 +46,11 @@ public class Transaction implements TimestampAssignable<Long> {
   public long eventTime;
   public long payeeId;
   public long beneficiaryId;
-  public BigDecimal paymentAmount;
+
+  @JsonDeserialize(using = MoneyToLongJsonDeserializer.class)
+  @JsonSerialize(using = LongToMoneyJsonSerializer.class)
+  public long paymentAmount;
+
   public PaymentType paymentType;
   private Long ingestionTimestamp;
 
@@ -92,7 +102,8 @@ public class Transaction implements TimestampAssignable<Long> {
       transaction.payeeId = Long.parseLong(iter.next());
       transaction.beneficiaryId = Long.parseLong(iter.next());
       transaction.paymentType = PaymentType.fromString(iter.next());
-      transaction.paymentAmount = new BigDecimal(iter.next());
+      transaction.paymentAmount =
+          MoneyToLongJsonDeserializer.moneyToLong(new BigDecimal(iter.next()));
       transaction.ingestionTimestamp = Long.parseLong(iter.next());
     } catch (NumberFormatException nfe) {
       throw new RuntimeException("Invalid record: " + line, nfe);
@@ -104,5 +115,25 @@ public class Transaction implements TimestampAssignable<Long> {
   @Override
   public void assignIngestionTimestamp(Long timestamp) {
     this.ingestionTimestamp = timestamp;
+  }
+
+  @Override
+  public String toString() {
+    return "Transaction{"
+        + "transactionId="
+        + transactionId
+        + ", eventTime="
+        + eventTime
+        + ", payeeId="
+        + payeeId
+        + ", beneficiaryId="
+        + beneficiaryId
+        + ", paymentAmount="
+        + longToMoney(paymentAmount)
+        + ", paymentType="
+        + paymentType
+        + ", ingestionTimestamp="
+        + ingestionTimestamp
+        + '}';
   }
 }
