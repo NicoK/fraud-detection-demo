@@ -106,9 +106,9 @@ public class DynamicAlertFunction
       ctx.timerService().registerEventTimeTimer(cleanupTime);
 
       SimpleAccumulator<Long> aggregator = RuleHelper.getAggregator(rule);
-      for (Long stateEventTime : windowState.keys()) {
-        if (isStateValueInWindow(stateEventTime, windowStartForEvent, currentEventTime)) {
-          aggregateValuesInState(stateEventTime, aggregator, rule, aggregateField);
+      for (Entry<Long, Set<Transaction>> stateEntry : windowState.entries()) {
+        if (isStateValueInWindow(stateEntry.getKey(), windowStartForEvent, currentEventTime)) {
+          aggregateValuesInState(stateEntry.getValue(), aggregator, rule, aggregateField);
         }
       }
       Long aggregateResult = aggregator.getLocalValue();
@@ -175,9 +175,11 @@ public class DynamicAlertFunction
   }
 
   private void aggregateValuesInState(
-      Long stateEventTime, SimpleAccumulator<Long> aggregator, Rule rule, Field aggregateField)
+      Set<Transaction> inWindow,
+      SimpleAccumulator<Long> aggregator,
+      Rule rule,
+      Field aggregateField)
       throws Exception {
-    Set<Transaction> inWindow = windowState.get(stateEventTime);
     if (COUNT.equals(rule.getAggregateFieldName())
         || COUNT_WITH_RESET.equals(rule.getAggregateFieldName())) {
       for (int i = 0; i < inWindow.size(); ++i) {
