@@ -172,7 +172,7 @@ public class DynamicAlertFunction
     Set<Transaction> inWindow = windowState.get(stateEventTime);
     if (COUNT.equals(rule.getAggregateFieldName())
         || COUNT_WITH_RESET.equals(rule.getAggregateFieldName())) {
-      for (Transaction event : inWindow) {
+      for (int i = 0; i < inWindow.size(); ++i) {
         aggregator.add(BigDecimal.ONE);
       }
     } else {
