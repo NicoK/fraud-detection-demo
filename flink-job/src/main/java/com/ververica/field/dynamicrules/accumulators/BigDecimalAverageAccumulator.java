@@ -29,7 +29,7 @@ import org.apache.flink.api.common.accumulators.SimpleAccumulator;
  * {@code double} and the result is {@code double}.
  */
 @Public
-public class AverageAccumulator implements SimpleAccumulator<BigDecimal> {
+public class BigDecimalAverageAccumulator implements SimpleAccumulator<BigDecimal> {
 
   private static final long serialVersionUID = 1L;
 
@@ -59,18 +59,19 @@ public class AverageAccumulator implements SimpleAccumulator<BigDecimal> {
 
   @Override
   public void merge(Accumulator<BigDecimal, BigDecimal> other) {
-    if (other instanceof AverageAccumulator) {
-      AverageAccumulator avg = (AverageAccumulator) other;
+    if (other instanceof BigDecimalAverageAccumulator) {
+      BigDecimalAverageAccumulator avg = (BigDecimalAverageAccumulator) other;
       this.count += avg.count;
       this.sum = sum.add(avg.sum);
     } else {
-      throw new IllegalArgumentException("The merged accumulator must be AverageAccumulator.");
+      throw new IllegalArgumentException(
+          "The merged accumulator must be BigDecimalAverageAccumulator.");
     }
   }
 
   @Override
-  public AverageAccumulator clone() {
-    AverageAccumulator average = new AverageAccumulator();
+  public BigDecimalAverageAccumulator clone() {
+    BigDecimalAverageAccumulator average = new BigDecimalAverageAccumulator();
     average.count = this.count;
     average.sum = this.sum;
     return average;
@@ -78,6 +79,10 @@ public class AverageAccumulator implements SimpleAccumulator<BigDecimal> {
 
   @Override
   public String toString() {
-    return "AverageAccumulator " + this.getLocalValue() + " for " + this.count + " elements";
+    return "BigDecimalAverageAccumulator "
+        + this.getLocalValue()
+        + " for "
+        + this.count
+        + " elements";
   }
 }
